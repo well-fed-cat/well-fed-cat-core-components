@@ -1,4 +1,4 @@
-rootProject.name = 'well-fed-cat-core-root'
+rootProject.name = 'well-fed-cat-core-components'
 
 include 'well-fed-cat-utils'
 include 'well-fed-cat-datamodel'
