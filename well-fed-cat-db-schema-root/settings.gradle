@@ -1,5 +1,0 @@
-rootProject.name = 'well-fed-cat-db-schema-root'
-
-include 'well-fed-cat-db-schema'
-include 'well-fed-cat-db-schema-updater'
-include 'well-fed-cat-db-schema-test-data-init'
