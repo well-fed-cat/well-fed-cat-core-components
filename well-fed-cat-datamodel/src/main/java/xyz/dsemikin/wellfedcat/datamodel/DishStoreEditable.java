@@ -6,20 +6,17 @@ import java.util.UUID;
 
 /**
  * <p>
- *     Any implementation should respect these additional requirements:
+ *     Any implementation should respect these additional requirements described below.
  * </p>
- *
- * <ul>
- *     <li>
- *         If the dish with particular public id and name was deleted, it
- *         should be possible to use them again (independently) for other
- *         dishes.
- *     </li>
- *     <li>
- *         Same is valid, if dish name or public id was changed, - the old
- *         value is allowed to be reused by other dishes.
- *     </li>
- * </ul>
+ * <p>
+ *     If the dish with particular public id and name was deleted, it
+ *     should be possible to use them again (independently) for other
+ *     dishes.
+ * </p>
+ * <p>
+ *     Same is valid, if dish name or public id was changed, - the old
+ *     value is allowed to be reused by other dishes.
+ * </p>
  *
  * <p>
  *     Note: Possibility to change and reuse public ids and names
@@ -36,6 +33,7 @@ import java.util.UUID;
  *     in such a way, that it is quasi-globally-unique
  *     (e.g. UUID) and it is not allowed to be reused ever.
  * </p>
+ * <p></p>
  *
  * <h3>Interaction with {@code MenuTimelineStore}</h3>
  * <p>
@@ -48,6 +46,29 @@ import java.util.UUID;
  *     constraints interaction of this class with {@link MenuTimelineStore}
  *     and {@link MenuTimelineStoreEditable}.
  * </p>
+ *
+ * <h2>Stores with "staging" and without it</h2>
+ *
+ * <p>
+ *     More thoughts about staging are available here:
+ *     <a href="https://well-fed-cat.github.io/2021/09/20/Concurrent-acess-and-staging-problem-for-stores.html">
+ *     Concurrent Access And Staging Problem For Stores
+ *     </a>
+ * </p>
+ * <p>
+ *     Current implementation will assume "staging" is present, i.e. the Dish objects
+ *     are not directly connected to the DB. Instead copy of the data from DB is
+ *     created. The object may be modified and then updated version can be stored
+ *     again to the DB.
+ * </p>
+ * <p>
+ *     To handle concurrent access we will introduce versioning of the objects and
+ *     will prohibit update, if the other update happened since this object was created.
+ * </p>
+ * <p>
+ *     Another problem of staging is, hat we need to
+ * </p>
+ *
  */
 public interface DishStoreEditable extends DishStore {
 
@@ -143,14 +164,18 @@ public interface DishStoreEditable extends DishStore {
     /**
      * Using this method it is possible to change some parameters of the dish.
      *
+     * <p>
      * For this one needs to get dish from store and then modify it using
      * "update" methods and then update it in the store using this method.
-     *
+     * </p>
+     * <p>
      * If it is for some reason not possible to update the dish, then
-     * implementation specific exceptions may be thrown.
-     *
+     * implementation specific runtime exceptions may be thrown.
+     * </p>
+     * <p>
      * Implementation should use {@link DishModified#oldPublicId()} to
      * search for the dish in the store, which is to be updated.
+     * </p>
      *
      * @param newDishVersion  updated version of the dish. Obtain by
      *                        getting dish from the store and then using

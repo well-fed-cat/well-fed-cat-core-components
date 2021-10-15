@@ -10,11 +10,35 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
+ * <p>
  * Even though, the notion of "dish" can be considered without referring to
  * {@link DishStore}, or {@link DishStoreEditable}, it is not likely to be
- * used without this context. Thus the traits specific to "store" like e.g.
+ * used without this context. Thus, the traits specific to "store" like e.g.
  * {@code version} are included directly into this class and not to its
  * subclasses.
+ * </p>
+ *
+ * <h2>Dish lifecycle</h2>
+ *
+ * <p>
+ *     The first idea, which comes to mind: it would be nice, if the Dish
+ *     would could be created only by the DishStore... But for DishStore to be
+ *     able to create Dish object, Dish has to have public constructor, which
+ *     enables all the other classes to also create the Dish.
+ * </p>
+ * <p>
+ *     One possible solution is to use some argument of type, whose constructor
+ *     is only available to DishStore, e.g. StrongId. This makes the whole
+ *     construct somewhat more complicated though.
+ * </p>
+ * <p>
+ *     What if we assume, that it is allowed to create Dish objects not only
+ *     within DishStore? We could for example exclude possibility to add
+ *     such Dishes into the Store. This would make creation of such Dishes
+ *     more or less useless. There is still a question though, if it would
+ *     be possible to use those Dishes in Menus. Probably it would. Saving
+ *     those Menus to MenuStore should cause problems though.
+ * </p>
  */
 public class Dish implements Serializable
 {
@@ -25,7 +49,7 @@ public class Dish implements Serializable
     private final int version;
 
     /**
-     * Max supported dish name length (in letters) - also to be supported by
+     * Max supported dish name length (in characters) - also to be supported by
      * {@link DishStore} implementations.
      */
     public static final int MAX_DISH_NAME_LENGTH = 100; // must be coherent with DB schema
