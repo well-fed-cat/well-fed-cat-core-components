@@ -55,7 +55,7 @@ public class Dish implements Serializable
         this.strongId = strongId;
         this.publicId = publicId;
         this.name = name;
-        this.suitableForMealTimes = suitableForMealTimes;
+        this.suitableForMealTimes = Set.copyOf(suitableForMealTimes); // unmodifiable
         this.version = version;
 
         // TODO: Check, that arguments are not empty
@@ -138,7 +138,7 @@ public class Dish implements Serializable
     }
 
     /**
-     * @return  List of the meal times for which this dish is
+     * @return  Unmodifiable set of the meal times for which this dish is
      *          suitable. Used by the algorithms, which
      *          generate menu.
      */
