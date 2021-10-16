@@ -1,4 +1,4 @@
-package xyz.dsemikin.wellfedcat.core;
+package xyz.dsemikin.wellfedcat.menugenerator;
 
 import java.util.ArrayList;
 import java.util.Collection;

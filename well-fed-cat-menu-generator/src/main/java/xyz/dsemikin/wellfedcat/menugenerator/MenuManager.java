@@ -1,4 +1,4 @@
-package xyz.dsemikin.wellfedcat.core;
+package xyz.dsemikin.wellfedcat.menugenerator;
 
 import xyz.dsemikin.wellfedcat.datamodel.DayMenu;
 import xyz.dsemikin.wellfedcat.datamodel.Dish;

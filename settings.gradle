@@ -2,6 +2,6 @@ rootProject.name = 'well-fed-cat-core-components'
 
 include 'well-fed-cat-utils'
 include 'well-fed-cat-datamodel'
-include 'well-fed-cat-core'
+include 'well-fed-cat-menu-generator'
 
 include 'well-fed-cat-datamodel-test'

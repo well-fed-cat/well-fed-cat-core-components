@@ -1,4 +1,4 @@
-package xyz.dsemikin.wellfedcat.core;
+package xyz.dsemikin.wellfedcat.menugenerator;
 
 import com.ibm.icu.text.Transliterator;
 import xyz.dsemikin.wellfedcat.datamodel.DayMenu;
