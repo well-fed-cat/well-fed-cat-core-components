@@ -3,41 +3,14 @@ package xyz.dsemikin.wellfedcat.datamodel;
 import xyz.dsemikin.wellfedcat.utils.Utils;
 
 import java.io.Serializable;
-import java.util.Arrays;
-import java.util.LinkedHashSet;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
 /**
  * <p>
- * Even though, the notion of "dish" can be considered without referring to
- * {@link DishStore}, or {@link DishStoreEditable}, it is not likely to be
- * used without this context. Thus, the traits specific to "store" like e.g.
- * {@code version} are included directly into this class and not to its
- * subclasses.
- * </p>
- *
- * <h2>Dish lifecycle</h2>
- *
- * <p>
- *     The first idea, which comes to mind: it would be nice, if the Dish
- *     would could be created only by the DishStore... But for DishStore to be
- *     able to create Dish object, Dish has to have public constructor, which
- *     enables all the other classes to also create the Dish.
- * </p>
- * <p>
- *     One possible solution is to use some argument of type, whose constructor
- *     is only available to DishStore, e.g. StrongId. This makes the whole
- *     construct somewhat more complicated though.
- * </p>
- * <p>
- *     What if we assume, that it is allowed to create Dish objects not only
- *     within DishStore? We could for example exclude possibility to add
- *     such Dishes into the Store. This would make creation of such Dishes
- *     more or less useless. There is still a question though, if it would
- *     be possible to use those Dishes in Menus. Probably it would. Saving
- *     those Menus to MenuStore should cause problems though.
+ *     Some ideas about {@code Dish} design are available
+ *     <a href="https://well-fed-cat.github.io/2021/09/21/Design-of-dish-and-dish-store.html">here</a>.
  * </p>
  */
 public class Dish implements Serializable
@@ -55,63 +28,31 @@ public class Dish implements Serializable
     public static final int MAX_DISH_NAME_LENGTH = 100; // must be coherent with DB schema
 
     /**
-     * Convenience method to create {@code Dish} objects.
-     *
-     * @param publicId  see {@link #publicId()}
-     * @param name  see {@link #name()}
-     * @param mealTimes  see {@link #suitableForMealTimes()}. Repeated meal times will be ignored.
-     * @return  created object.
+     * Max supported dish public id length (in characters) - also to be supported by
+     * {@link DishStore} implementations.
      */
-    public static Dish make(final String publicId, final String name, MealTime... mealTimes) {
-        return new Dish(publicId, name, new LinkedHashSet<>(Arrays.asList(mealTimes)));
-    }
-
-    public DishModified updatePublicId(final String newPublicId) {
-        return DishModified.updatePublicId(this, newPublicId);
-    }
-
-    public DishModified updateName(final String newName) {
-        return DishModified.updateName(this, newName);
-    }
-
-    public DishModified updateSuitableForMealTimes(final Set<MealTime> suitableForMealTimes) {
-        return DishModified.updateSuitableForMealTimes(this, suitableForMealTimes);
-    }
+    public static final int MAX_DISH_PUBLIC_ID_LENGTH = 100;
 
     /**
-     * Use this constructor or convenience {@link #make(String, String, MealTime...)}
-     * method to create new {@code Dish} objects.
+     * The constructor is only supposed to be used by DishStore implementations.
+     * Compliant DishStore implementations should not allow saving Dish objects
+     * created externally, so creating Dishes without help of DishStore should
+     * be useless.
      *
-     * @param publicId              see {@link #publicId()}
-     * @param name                  see {@link #name()}
-     * @param suitableForMealTimes  see {@link #suitableForMealTimes()}
-     */
-    public Dish(
-            final String publicId,
-            final String name,
-            final Set<MealTime> suitableForMealTimes
-    ) {
-        this(publicId, name, suitableForMealTimes, 0);
-    }
-
-    /**
-     * This constructor is only supposed to be used by methods, which are
-     * responsible for recreating objects e.g., when reading data from DB,
-     * and must not be used for manual manipulations with version. Otherwise
-     * dish store integrity may be corrupted.
-     *
+     * @param strongId              see {@link #strongId()}
      * @param publicId              see {@link #publicId()}
      * @param name                  see {@link #name()}
      * @param suitableForMealTimes  see {@link #suitableForMealTimes()}
      * @param version               see {@link #version()}
      */
     public Dish(
+            final UUID strongId,
             final String publicId,
             final String name,
             final Set<MealTime> suitableForMealTimes,
             final int version
     ) {
-        this.strongId = UUID.randomUUID();
+        this.strongId = strongId;
         this.publicId = publicId;
         this.name = name;
         this.suitableForMealTimes = suitableForMealTimes;
@@ -127,31 +68,36 @@ public class Dish implements Serializable
                                 )
                 );
         if (!publicIdIsOk) {
-            throw new IllegalArgumentException("publicId must be composed of digits, ascii chars or underscore.");
+            throw new IllegalArgumentException("publicId must be composed of digits, ascii chars or underscore. Current value is (excluding enclosing quotes) \"" + publicId + "\"");
+        }
+
+        if (publicId.length() > MAX_DISH_PUBLIC_ID_LENGTH) {
+            throw new IllegalArgumentException("Max allowed length of dish public id is " + MAX_DISH_PUBLIC_ID_LENGTH + ". Current value is " + publicId.length());
         }
 
         if (name.length() > MAX_DISH_NAME_LENGTH) {
-            throw new IllegalArgumentException("Max allowed length of dish name is " + MAX_DISH_NAME_LENGTH);
+            throw new IllegalArgumentException("Max allowed length of dish name is " + MAX_DISH_NAME_LENGTH + ". Current value is " + name.length());
+        }
+
+        if (version <= 0) {
+            throw new IllegalArgumentException("Version must be greater than zero. Current value is " + version);
         }
     }
 
     /**
      * <p>
-     * strongId is supposed to be permanent, quasi-globally-unique id
-     * of the Dish, i.e. it is designed in such a way, that there should
-     * be no other dish with the same strongId, and strongId of this
-     * dish will never change.
+     *     strongId is supposed to be permanent, quasi-globally-unique id
+     *     of the Dish, i.e. it is designed in such a way, that there should
+     *     be no other dish with the same strongId, and strongId of this
+     *     dish will never change.
      * </p>
      * <p>
-     * This ID may be stored outside of this system for arbitrarily long
-     * and it is guaranteed, that if it is used again in the system, then
-     * either the same dish will be returned, or the dish will not be
-     * returned, if it was deleted.
+     *     This ID may be stored outside of this system for arbitrarily long
+     *     and it is guaranteed, that if it is used again in the system, then
+     *     either the same dish will be returned, or the dish will not be
+     *     returned, if it was deleted.
      * </p>
-     * <p>
-     *     Unlike public id and name strong id is not provided by the user,
-     *     when dish is created, but instead generated by the
-     * </p>
+     *
      * @return strongId of the dish.
      */
     public UUID strongId() {
@@ -160,7 +106,9 @@ public class Dish implements Serializable
 
     /**
      * @return  Name of the dish. Has virtually no restrictions on its
-     *          content (should be printable unicode symbols though).
+     *          content except length (should be printable unicode symbols though).
+     *
+     * @see Dish#MAX_DISH_NAME_LENGTH
      */
     public String name() {
         return name;
@@ -172,22 +120,18 @@ public class Dish implements Serializable
      *     letters, numbers and underscore symbols.
      * </p>
      * <p>
-     *     Unique within the dish store.
-     * </p>
-     * <p>
-     *     By convention it is used in the code to retrieve the dishes from
-     *     the store programmatically (even though {@code name} can also be
-     *     used for this purpose. E.g. {@link DishModified} will contain
-     *     both: old and new values of publicId, if it was changed, while
-     *     only new value of the name.
-     * </p>
-     * <p>
-     *     Another purpose is to access dishes in the store while
+     *     Main purpose is to access dishes in the store while
      *     using well-fed-cat interactively from console (e.g.
-     *     from jshell or groovy console).
+     *     from jshell or groovy console), which maybe more handy, then
+     *     using name (which can be complicated and use non-ascii characters).
+     * </p>
+     * <p>
+     *     Unique within the dish store. Max length is limited.
      * </p>
      *
      * @return  public id.
+     *
+     * @see Dish#MAX_DISH_PUBLIC_ID_LENGTH
      */
     public String publicId() {
         return publicId;
@@ -215,7 +159,7 @@ public class Dish implements Serializable
 
     @Override
     public String toString() {
-        final StringBuilder string = new StringBuilder(publicId() + " : " + Utils.translit(name()) + " : ");
+        final StringBuilder string = new StringBuilder(strongId() + "[" + version() + "]:" + publicId() + " : " + Utils.translit(name()) + " : ");
         for (var mealTime : suitableForMealTimes()) {
             string.append(mealTime).append(", ");
         }
@@ -228,11 +172,21 @@ public class Dish implements Serializable
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Dish dish = (Dish) o;
-        return version == dish.version && publicId.equals(dish.publicId) && name.equals(dish.name) && suitableForMealTimes.equals(dish.suitableForMealTimes);
+        if (!dish.strongId().equals(this.strongId())) {
+            return false;
+        }
+        if (dish.version() != this.version()) {
+            final String message = "The strongId of the compared objects are the same (i.e. it is the same object), " +
+                    "but versions are different. It is prohibited to use different versions of the same object " +
+                    "in one context. Strong ID: " + strongId() + ", this.version: " + this.version() + ", " +
+                    "other.version: " + dish.version();
+            throw new IllegalArgumentException(message);
+        }
+        return true;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(publicId, name, suitableForMealTimes, version);
+        return Objects.hash(strongId);
     }
 }

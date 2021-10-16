@@ -165,24 +165,24 @@ public interface DishStoreEditable extends DishStore {
      * Using this method it is possible to change some parameters of the dish.
      *
      * <p>
-     * For this one needs to get dish from store and then modify it using
-     * "update" methods and then update it in the store using this method.
+     *     For this one needs to get dish from store and then modify it using
+     *     "update" methods and then update it in the store using this method.
      * </p>
      * <p>
-     * If it is for some reason not possible to update the dish, then
-     * implementation specific runtime exceptions may be thrown.
+     *     If it is for some reason not possible to update the dish, then
+     *     implementation specific runtime exceptions may be thrown.
      * </p>
      * <p>
-     * Implementation should use {@link DishModified#oldPublicId()} to
-     * search for the dish in the store, which is to be updated.
+     *     After update the dish object should not be used anymore in any context.
+     *     Instead new version of the object should be fetch from the store
+     *     using strongId.
      * </p>
-     *
-     * @param newDishVersion  updated version of the dish. Obtain by
-     *                        getting dish from the store and then using
-     *                        "update"-methods on it.
+     * @param dish  Dish to be modified
+     * @param dishModification  Modification to be applied.
      * @return See description of the {@link UpdateStatus} values.
      */
-    UpdateStatus updateDish(final DishModified newDishVersion);
+    UpdateStatus updateDish(final Dish dish, final DishModification dishModification);
+    // TODO: Should this method return new version of the dish? Need to check, how it will actually be used.
 
     enum DeleteStatus {
         /** Dish was successfully removed. */
