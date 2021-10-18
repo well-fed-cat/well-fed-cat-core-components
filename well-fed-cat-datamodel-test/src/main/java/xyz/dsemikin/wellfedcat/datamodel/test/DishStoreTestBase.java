@@ -80,7 +80,7 @@ public abstract class DishStoreTestBase {
     public void test_getById_exists() {
         final String dishId = "granola";
         final DishStore dishStore = getDishStore();
-        Optional<Dish> maybeActualDish = dishStore.getById(dishId);
+        Optional<Dish> maybeActualDish = dishStore.getByPublicId(dishId);
         assertTrue(maybeActualDish.isPresent());
         final Dish actualDish = maybeActualDish.get();
 
@@ -96,7 +96,7 @@ public abstract class DishStoreTestBase {
     public void test_getById_notExist() {
         final String dishId = "pelmeni";
         final DishStore dishStore = getDishStore();
-        Optional<Dish> maybeActualDish = dishStore.getById(dishId);
+        Optional<Dish> maybeActualDish = dishStore.getByPublicId(dishId);
         assertTrue(maybeActualDish.isEmpty());
     }
 }

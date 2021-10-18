@@ -3,12 +3,8 @@ package xyz.dsemikin.wellfedcat.datamodel.test;
 import org.junit.jupiter.api.Test;
 import xyz.dsemikin.wellfedcat.datamodel.Dish;
 import xyz.dsemikin.wellfedcat.datamodel.DishStoreEditable;
-import xyz.dsemikin.wellfedcat.datamodel.DishStoreEditable.DeleteStatus;
 
 import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static xyz.dsemikin.wellfedcat.datamodel.DishStoreEditable.DeleteStatus.SUCCESS;
 
 public abstract class DishStoreEditableTestBase {
 
@@ -90,26 +86,6 @@ public abstract class DishStoreEditableTestBase {
 //        assertTrue(dishStore.getById(dishWithExistingName.publicId()).isEmpty());
 //        // Dish with this name exists
 //        assertTrue(dishStore.getByName(dishWithExistingName.name()).isPresent());
-    }
-
-    @Test
-    public void test_removeByName_exists_noDependentMenuTimeline() {
-        final DishStoreEditable dishStore = getDishStore();
-        //noinspection OptionalGetWithoutIsPresent
-        final Dish existingDish = dishStore.getById("yoghurt").get();
-        final DeleteStatus deleteStatus = dishStore.deleteByName(existingDish.name());
-        assertEquals(SUCCESS, deleteStatus);
-    }
-
-    // TODO: Probably create separate test class to test dependency on MenuTimelineStore
-    // TODO: We need to select dish used in test menu timeline.
-    @Test
-    public void test_removeByName_exists_withDependentMenuTimeline() {
-        final DishStoreEditable dishStore = getDishStore();
-        //noinspection OptionalGetWithoutIsPresent
-        final Dish existingDish = dishStore.getById("yoghurt").get();
-        final DeleteStatus deleteStatus = dishStore.deleteByName(existingDish.name());
-        assertEquals(SUCCESS, deleteStatus);
     }
 
     @Test

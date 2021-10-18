@@ -8,44 +8,42 @@ import java.util.UUID;
  * <p>
  *     Any implementation should respect these additional requirements described below.
  * </p>
- * <p>
+ * <ul>
+ * <li>
  *     If the dish with particular public id and name was deleted, it
  *     should be possible to use them again (independently) for other
  *     dishes.
- * </p>
- * <p>
+ * </li>
+ * <li>
  *     Same is valid, if dish name or public id was changed, - the old
  *     value is allowed to be reused by other dishes.
- * </p>
- *
+ * </li>
+ * </ul>
  * <p>
  *     Note: Possibility to change and reuse public ids and names
- *     means, that the system does not enforce validity
- *     of external references to the dishes. If public ID was saved
- *     outside the system and then was used to retrieve the dish,
- *     it is not guaranteed, that the dish will be the same or will
- *     exist at all.
- * </p>
- *
- * <p>
- *     To enforce it we would need to include "constant-quasi-unique-id",
- *     (one could call it "strong-id") which would be generated
- *     in such a way, that it is quasi-globally-unique
- *     (e.g. UUID) and it is not allowed to be reused ever.
+ *     means, that the system does not guarantee validity and unambiguity
+ *     of external references, which use those fields. Thus it is not recommended
+ *     to use them for this purpose (they were not designed for it). Instead one
+ *     should better use strong id, which is guaranteed to be unique and permanent.
  * </p>
  * <p></p>
  *
- * <h3>Interaction with {@code MenuTimelineStore}</h3>
+ *
+ * <h2>Interaction with {@code MenuTimelineStore}</h2>
+ *
  * <p>
  *     Even though {@code DishStoreEditable} does not explicitly refer to
  *     {@link MenuTimelineStore} or {@link MenuTimelineStoreEditable}, their
  *     behavior together should be explicitly specified to ensure consistent
  *     behavior of different implementations of these stores.
- *
+ * </p>
+ * <p>
  *     See documentation for {@link MenuTimelineStoreEditable} for additional
  *     constraints interaction of this class with {@link MenuTimelineStore}
  *     and {@link MenuTimelineStoreEditable}.
  * </p>
+ * <p></p>
+ *
  *
  * <h2>Stores with "staging" and without it</h2>
  *
@@ -65,10 +63,6 @@ import java.util.UUID;
  *     To handle concurrent access we will introduce versioning of the objects and
  *     will prohibit update, if the other update happened since this object was created.
  * </p>
- * <p>
- *     Another problem of staging is, hat we need to
- * </p>
- *
  */
 public interface DishStoreEditable extends DishStore {
 
@@ -98,45 +92,7 @@ public interface DishStoreEditable extends DishStore {
             final Set<MealTime> suitableForMealTimes
             );
 
-    /** Delete dish identified by name from store, if possible.
-     *
-     * <p>Note, that {@link #deleteByStrongId(UUID)} identifies dish
-     * more reliably</p>
-     *
-     * @param name   name of the dish to be removed from store.
-     * @return   {@link DeleteStatus#SUCCESS}, if dish was removed,
-     *           {@link DeleteStatus#DOES_NOT_EXIST}, if dish with given name
-     *           does not exist, and
-     *           {@link DeleteStatus#USED_IN_MENU_TIMELINE}, if dish cannot
-     *           be deleted because it is used in menu timeline store.
-     *           If dish cannot be deleted because of some other reason,
-     *           some exception will be thrown (implementation specific).
-     */
-    DeleteStatus deleteByName(final String name);
-
-    /** Delete dish identified by its public id from store, if possible.
-     *
-     * <p>Note, that {@link #deleteByStrongId(UUID)} identifies dish
-     * more reliably</p>
-     *
-     * @param publicId   public id of the dish to be removed from store.
-     * @return   {@link DeleteStatus#SUCCESS}, if dish was removed,
-     *           {@link DeleteStatus#DOES_NOT_EXIST}, if dish with given name
-     *           does not exist, and
-     *           {@link DeleteStatus#USED_IN_MENU_TIMELINE}, if dish cannot
-     *           be deleted because it is used in menu timeline store.
-     *           If dish cannot be deleted because of some other reason,
-     *           some exception will be thrown (implementation specific).
-     */
-    DeleteStatus deleteByPublicId(final String publicId);
-
     /** Delete dish identified by its strong id from store, if possible.
-     *
-     * Note, that it is the most reliable way of deletion in the sense,
-     * that it is not possible, that dish with this strong id was already
-     * deleted and then another one was created (because strong id is
-     * unique within the store, - no repetitions are allowed even after
-     * deletion).
      *
      * @param strongId   strong id of the dish to be removed from store.
      * @return   {@link DeleteStatus#SUCCESS}, if dish was removed,
@@ -147,7 +103,7 @@ public interface DishStoreEditable extends DishStore {
      *           If dish cannot be deleted because of some other reason,
      *           some exception will be thrown (implementation specific).
      */
-    DeleteStatus deleteByStrongId(final UUID strongId);
+    DeleteStatus delete(final UUID strongId);
 
     /**
      * Convenience (default) method to delete dish by it's object.
@@ -155,23 +111,15 @@ public interface DishStoreEditable extends DishStore {
      * Strong ID is used to identify the dish object.
      *
      * @param dish  Dish to be deleted.
-     * @return See {@link #deleteByStrongId(UUID)}
+     * @return See {@link #delete(UUID)}
      */
     default DeleteStatus delete(final Dish dish) {
-        return deleteByStrongId(dish.strongId());
+        return delete(dish.strongId());
     }
 
     /**
      * Using this method it is possible to change some parameters of the dish.
      *
-     * <p>
-     *     For this one needs to get dish from store and then modify it using
-     *     "update" methods and then update it in the store using this method.
-     * </p>
-     * <p>
-     *     If it is for some reason not possible to update the dish, then
-     *     implementation specific runtime exceptions may be thrown.
-     * </p>
      * <p>
      *     After update the dish object should not be used anymore in any context.
      *     Instead new version of the object should be fetch from the store
@@ -179,10 +127,20 @@ public interface DishStoreEditable extends DishStore {
      * </p>
      * @param dish  Dish to be modified
      * @param dishModification  Modification to be applied.
-     * @return See description of the {@link UpdateStatus} values.
+     * @return See description of the {@link UpdateStatus} values. If update cannot be
+     *         done because of some reason not covered by this enum, then implementation
+     *         specific exception is thrown (connection error etc.).
      */
     UpdateStatus updateDish(final Dish dish, final DishModification dishModification);
     // TODO: Should this method return new version of the dish? Need to check, how it will actually be used.
+
+    /**
+     * This method can be used to detect if dish was deleted.
+     *
+     * @param strongId - Strong ID of dish to check.
+     * @return - Dish state.
+     */
+    DishState getDishState(final UUID strongId);
 
     enum DeleteStatus {
         /** Dish was successfully removed. */
