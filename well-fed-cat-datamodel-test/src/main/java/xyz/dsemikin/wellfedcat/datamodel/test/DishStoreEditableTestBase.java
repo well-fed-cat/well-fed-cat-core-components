@@ -1,25 +1,40 @@
 package xyz.dsemikin.wellfedcat.datamodel.test;
 
 import org.junit.jupiter.api.Test;
-import xyz.dsemikin.wellfedcat.datamodel.Dish;
 import xyz.dsemikin.wellfedcat.datamodel.DishStoreEditable;
+import xyz.dsemikin.wellfedcat.datamodel.test.TestDataProvider.DishCreationData;
 
 import java.util.List;
 
 public abstract class DishStoreEditableTestBase {
 
-    // If DishStore and MenuTimelineStore are dependent
-    // (like for SQL DB based store), both stores should
-    // be created and filled, so that the interdependencies
-    // are properly captured.
+    /**
+     * Implement this in the specific test implementations to provide DishStore object under the test.
+     *
+     * <p>
+     *     It is expected, that returned DishStore is populated with data provided by {@link #expectedDishes()}
+     *     method.
+     * </p>
+     *
+     * <p>
+     *     If DishStore and MenuTimelineStore are dependent
+     *     (like for SQL DB based store), both stores should
+     *     be created and filled, so that the interdependencies
+     *     are properly captured.
+     * </p>
+     */
     protected abstract DishStoreEditable getDishStore();
 
-    protected TestDataProvider testDataProvider() {
-        return new TestDataProvider();
-    }
-
-    private List<Dish> expectedDishes() {
-        return testDataProvider().expectedDishes();
+    /**
+     * This method returns list of Dish objects expected to be
+     * stored in the DishStore for the tests (and ONLY these
+     * Dishes).
+     *
+     * Implementations of this class must use this method to
+     * populate the store.
+     */
+    private List<DishCreationData> expectedDishes() {
+        return new TestDataProvider().expectedDishes();
     }
 
     @Test
